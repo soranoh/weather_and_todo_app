@@ -1,22 +1,40 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import * as Location from 'expo-location';
 
 /*
- * 1) 웹처럼 자동 스크롤이 없기 때문에 View -> ScrollView 로 사용해야 한다.
- * 2) ScrollView 에서는 style -> contentContainerStyle 로 사용해야지 설정된 사이즈가 적용된다.
- * 3) 스크린보다 사이즈가 커야 스크롤이 생기기 때문에 ScrollView 에서는 flex 사이즈가 필요없다.
- * 4) Deimensions 로 스크린의 크기를 알 수 있다.(height, width)
- * 5) pagingEnabled 로 자유분방한 스크롤을 페이징과 비슷하게 잡아준다.
- * 6) showsHorizontalScrollIndicator(혹은 showsVerticalScrollIndicator) 로 스크롤바를 숨긴다.
+ * 1) requestForegroundPermissionsAsync() : 앱을 사용하는 중에 위치와 관련된 권한을 확인한다.
+ *    앱에서 권한 허용을 하면은 requestForegroundPermissionsAsync.granted = true 로 설정된다.
+ * 2) getCurrentPositionAsync() : 사용자 디바이스의 현재 위치 관련 정보를 가져온다.
+ *    accuracy 는 얼마나 정확한 위치를 가져오는지에 대한 설정이다.(1~6, 숫자가 높을수록 자세하다.)
+ *    latitude(위도), longitude(경도) 데이터도 있다.
+ * 3) reverseGeocodeAsync() : 위도, 경도를 통해 현재 위치를 가져온다.
  */
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function App() {
+  const [city, setCity] = useState("Loading...");
+  const [location, setLocation] = useState(null);
+  const [ok, setOk] = useState(true);
+  const ask = async() => {
+    const {granted} = await Location.requestForegroundPermissionsAsync();
+    if(!granted) {
+      setOk(false);
+    }
+    const {coords:{latitude, longitude}} = await Location.getCurrentPositionAsync({accuracy: 5});
+    const location = await Location.reverseGeocodeAsync({latitude, longitude}, {useGoogleMaps: false});
+    setCity(location[0].region);
+  }
+
+  useEffect(() => {
+    ask();
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.city}>
-        <Text style={styles.cityName}>Seoul</Text>
+        <Text style={styles.cityName}>{city}</Text>
       </View>
       <ScrollView contentContainerStyle={styles.weather} horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
         <View style={styles.day}>
