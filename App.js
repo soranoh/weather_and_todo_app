@@ -1,13 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import * as Location from 'expo-location';
+import { Fontisto } from '@expo/vector-icons';
 
 /*
- * 1) 무료로 openweathermap 에서 API Key 를 발급받아 경도, 위도, API Key 를 통해 해당 위치의 날씨를 알 수 있다.
+ * 1) @expo/vector-icons 을 import 하면 다양한 아이콘 사용이 가능하다.
  */
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 const API_KEY = "c98a5472c486ce0b0bd8358755295e89";
+const icons = {
+  "Clouds": "cloudy",
+  "Rain": "rains",
+  "Clear": "day-sunny",
+  "Snow": "snow",
+  "Atmosphere": "cloudy-qusts",
+  "Drizzle": "rain",
+  "Thunderstorm": "lightning"
+};
 
 export default function App() {
   const [city, setCity] = useState("Loading...");
@@ -43,8 +53,15 @@ export default function App() {
           ) : (
             days.map((day, index) => 
               <View key={index} style={styles.day}>
-                <Text style={styles.temp}>{parseFloat(day.temp.day).toFixed(1)}</Text>
-                <Text style={styles.description}>{day.weather[0].main}</Text>
+                <View style={{
+                  flexDirection: "row",
+                  width: "100%",
+                  alignItems: "center"
+                }}>
+                  <Text style={{...styles.temp, marginTop: -30}}>{parseFloat(day.temp.day).toFixed(1)}</Text>
+                  <Fontisto name={icons[day.weather[0].main]} size={60} color="white" />
+                </View>
+                <Text style={{...styles.temp, fontSize: 40, marginTop: -10}}>{parseFloat(day.temp.morn).toFixed(1)} / {parseFloat(day.temp.night).toFixed(1)}</Text>
                 <Text style={styles.tinyText}>{day.weather[0].description}</Text>
               </View>
             )
@@ -67,23 +84,27 @@ const styles = StyleSheet.create({
   cityName: {
     fontSize: 68,
     fontWeight: "500",
+    color: "white"
   },
   weather: {
 
   },
   day: {
     width: SCREEN_WIDTH,
-    alignItems: "center",
+    //alignItems: "center",
   },
   temp: {
-    fontSize: 178,
-    marginTop: 50
+    fontSize: 100,
+    marginTop: 50,
+    color: "white"
   },
   description: {
-    fontSize: 60,
-    marginTop: -30
+    fontSize: 40,
+    marginTop: -30,
+    color: "white"
   },
   tinyText: {
-    fontSize: 20
+    fontSize: 20,
+    color: "white"
   }
 });
