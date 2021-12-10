@@ -1,23 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import * as Location from 'expo-location';
 
 /*
- * 1) requestForegroundPermissionsAsync() : 앱을 사용하는 중에 위치와 관련된 권한을 확인한다.
- *    앱에서 권한 허용을 하면은 requestForegroundPermissionsAsync.granted = true 로 설정된다.
- * 2) getCurrentPositionAsync() : 사용자 디바이스의 현재 위치 관련 정보를 가져온다.
- *    accuracy 는 얼마나 정확한 위치를 가져오는지에 대한 설정이다.(1~6, 숫자가 높을수록 자세하다.)
- *    latitude(위도), longitude(경도) 데이터도 있다.
- * 3) reverseGeocodeAsync() : 위도, 경도를 통해 현재 위치를 가져온다.
+ * 1) 무료로 openweathermap 에서 API Key 를 발급받아 경도, 위도, API Key 를 통해 해당 위치의 날씨를 알 수 있다.
  */
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
+const API_KEY = "c98a5472c486ce0b0bd8358755295e89";
 
 export default function App() {
   const [city, setCity] = useState("Loading...");
-  const [location, setLocation] = useState(null);
+  const [days, setDays] = useState([]);
   const [ok, setOk] = useState(true);
-  const ask = async() => {
+  const getWeather = async() => {
     const {granted} = await Location.requestForegroundPermissionsAsync();
     if(!granted) {
       setOk(false);
@@ -25,10 +21,13 @@ export default function App() {
     const {coords:{latitude, longitude}} = await Location.getCurrentPositionAsync({accuracy: 5});
     const location = await Location.reverseGeocodeAsync({latitude, longitude}, {useGoogleMaps: false});
     setCity(location[0].region);
+    const response = fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${latitude}&lon=${longitude}&exclude=alerts&appid=${API_KEY}&units=metric`);
+    const json = await (await response).json();
+    setDays(json.daily);
   }
 
   useEffect(() => {
-    ask();
+    getWeather();
   }, []);
 
   return (
@@ -37,22 +36,19 @@ export default function App() {
         <Text style={styles.cityName}>{city}</Text>
       </View>
       <ScrollView contentContainerStyle={styles.weather} horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
-        <View style={styles.day}>
-          <Text style={styles.temp}>10</Text>
-          <Text style={styles.description}>Sunny</Text>
-        </View>
-        <View style={styles.day}>
-          <Text style={styles.temp}>11</Text>
-          <Text style={styles.description}>Sunny</Text>
-        </View>
-        <View style={styles.day}>
-          <Text style={styles.temp}>12</Text>
-          <Text style={styles.description}>Sunny</Text>
-        </View>
-        <View style={styles.day}>
-          <Text style={styles.temp}>13</Text>
-          <Text style={styles.description}>Sunny</Text>
-        </View>
+        {days.length === 0 ? (
+            <View style={styles.day}>
+              <ActivityIndicator color="white" style={{marginTop: 10}} size="large" />
+            </View>
+          ) : (
+            days.map((day, index) => 
+              <View key={index} style={styles.day}>
+                <Text style={styles.temp}>{parseFloat(day.temp.day).toFixed(1)}</Text>
+                <Text style={styles.description}>{day.weather[0].main}</Text>
+                <Text style={styles.tinyText}>{day.weather[0].description}</Text>
+              </View>
+            )
+        )}
       </ScrollView>
     </View>
   );
@@ -87,4 +83,7 @@ const styles = StyleSheet.create({
     fontSize: 60,
     marginTop: -30
   },
+  tinyText: {
+    fontSize: 20
+  }
 });
